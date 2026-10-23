@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2기법 스캐너</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{
+  --paper:#edf0f4; --panel:#ffffff; --ink:#18202c; --sub:#667085; --rule:#d8dde5;
+  --up:#e0383e; --down:#2b6cde; --mark:#f08c00; --hover:#f4f6f9; --env:#111111; --near:rgba(240,140,0,.10);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#0d1218; --panel:#141b24; --ink:#e6ebf2; --sub:#8a96a8; --rule:#232d3a;
+    --up:#ff6a70; --down:#6ea2ff; --mark:#ffa62b; --hover:#1a232e; --env:#e6ebf2; --near:rgba(255,166,43,.12);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font:15px/1.5 "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-variant-numeric:tabular-nums;
+}
+.wrap{max-width:1480px; margin:0 auto; padding:0 16px}
+header{padding:22px 0 14px}
+.brand{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
+h1{margin:0; font-size:22px; font-weight:750; letter-spacing:-.02em}
+.rule-line{margin:2px 0 0; color:var(--sub); font-size:13px}
+.nav a{color:var(--sub); font-size:13px; text-decoration:none; border-bottom:1px solid var(--rule)}
+.nav a:hover{color:var(--ink)}
+.stamp{margin-left:auto; color:var(--sub); font-size:13px; text-align:right}
+.stamp b{color:var(--ink); font-weight:650}
+
+.layout{display:grid; grid-template-columns:minmax(0,1fr) 430px; gap:14px; height:calc(100vh - 118px); min-height:560px; margin-bottom:16px}
+.chartbox{background:var(--panel); border:1px solid var(--rule); padding:14px 16px 10px; display:flex; flex-direction:column; min-height:0; min-width:0}
+.ch-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+.ch-head h2{margin:0; font-size:18px; letter-spacing:-.01em}
+.ch-meta{color:var(--sub); font-size:13px}
+.ch-tools{display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap}
+.seg{display:inline-flex; border:1px solid var(--rule); border-radius:4px; overflow:hidden}
+.seg button{padding:5px 12px; border:0; background:transparent; color:var(--sub); font:inherit; font-size:13px; cursor:pointer}
+.seg button + button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--mark); color:#fff; font-weight:650}
+.seg button:focus-visible{outline:2px solid var(--mark); outline-offset:-2px}
+#chart{flex:1; min-height:240px; margin-top:10px}
+.view{margin-top:6px; color:var(--sub); font-size:12.5px}
+.key{display:flex; gap:16px; flex-wrap:wrap; color:var(--sub); font-size:12.5px; margin-top:6px}
+.key i{display:inline-block; width:14px; height:3px; margin-right:6px; vertical-align:middle; background:var(--env)}
+
+.log{background:var(--panel); border:1px solid var(--rule); display:flex; flex-direction:column; min-height:0; min-width:0}
+.log-head{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; flex:none; border-bottom:1px solid var(--rule); flex-wrap:wrap}
+.log h2{margin:0; font-size:14px; font-weight:700}
+.tools{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.tools label{font-size:13px; color:var(--sub); display:inline-flex; align-items:center; gap:6px; cursor:pointer}
+.tools input[type=search]{
+  width:130px; max-width:100%; padding:7px 10px; border:1px solid var(--rule); border-radius:4px;
+  background:var(--paper); color:var(--ink); font:inherit; font-size:14px;
+}
+.tools input:focus-visible{outline:2px solid var(--mark); outline-offset:1px}
+.scroll{flex:1; min-height:0; overflow-y:auto; overflow-x:hidden}
+table{width:100%; border-collapse:collapse}
+th, td{padding:8px 10px; text-align:left; border-bottom:1px solid var(--rule); font-size:14px; white-space:nowrap}
+th{color:var(--sub); font-weight:600; font-size:12.5px; background:var(--panel); position:sticky; top:0; z-index:1; box-shadow:0 1px 0 var(--rule)}
+td.nm small{display:block; margin:1px 0 0}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--hover)}
+tbody tr[aria-selected="true"]{box-shadow:inset 3px 0 0 var(--mark); background:var(--hover)}
+tbody tr.near{background:var(--near)}
+td.num, th.num{text-align:right}
+td small{color:var(--sub); font-size:12px}
+.up{color:var(--up)} .down{color:var(--down)}
+.tag{display:inline-block; padding:0 7px; margin-left:6px; border-radius:3px; font-size:11.5px; border:1px solid var(--mark); color:var(--mark)}
+.empty{padding:18px 16px; color:var(--sub); font-size:14px; margin:0}
+@media (max-width:980px){
+  .layout{grid-template-columns:1fr; height:auto}
+  .chartbox{height:420px}
+  .log{height:560px}
+  .stamp{margin-left:0; text-align:left; width:100%}
+}
+.del{border:1px solid var(--rule); background:transparent; color:var(--sub); border-radius:4px; padding:2px 8px; font:inherit; font-size:12.5px; cursor:pointer}
+.del:hover{color:var(--up); border-color:var(--up)}
+.tag.done{border-color:var(--sub); color:var(--sub)}
+.lnk{color:var(--sub); cursor:pointer; border-bottom:1px solid var(--rule); background:none; border-top:0; border-left:0; border-right:0; font:inherit; padding:0}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <h1>S2기법 스캐너</h1>
+      <div class="stamp" id="stamp">불러오는 중</div>
+    </div>
+    <p class="rule-line" id="rule">거래대금 큰 양봉 포착 후 20일 엔벨로프 하단에 닿을 때까지 지켜보는 종목</p>
+  </div>
+</header>
+
+<main class="wrap layout">
+  <section class="chartbox" aria-label="차트">
+    <div class="ch-head"><h2 id="chTitle">차트</h2><span class="ch-meta" id="chMeta"></span></div>
+    <div class="ch-tools">
+      <div class="seg" id="seg" role="group" aria-label="표시할 봉 수">
+        <button type="button" data-n="60" aria-pressed="false">60봉</button>
+        <button type="button" data-n="120" aria-pressed="true">120봉</button>
+        <button type="button" data-n="0" aria-pressed="false">전체</button>
+      </div>
+    </div>
+    <div id="chart" role="img" aria-label="캔들과 엔벨로프 차트"></div>
+    <div class="view" id="view"></div>
+    <div class="key"><span><i></i>엔벨로프 상단·하단 (20일, ±20%)</span><span>▲ 포착일(큰 양봉)</span><span>● 하단 터치일</span></div>
+  </section>
+
+  <section class="log" aria-label="종목 목록">
+    <div class="log-head">
+      <h2 id="listTitle">종목</h2>
+      <div class="tools">
+        <div class="seg" id="view2" role="group" aria-label="보기">
+          <button type="button" data-v="watch" aria-pressed="true">감시중</button>
+          <button type="button" data-v="done" aria-pressed="false">터치 완료</button>
+          <button type="button" data-v="all" aria-pressed="false">전체</button>
+        </div>
+        <div class="seg" id="sort" role="group" aria-label="정렬">
+          <button type="button" data-s="gap" aria-pressed="true">하단 근접순</button>
+          <button type="button" data-s="new" aria-pressed="false">최근 포착순</button>
+          <button type="button" data-s="amt" aria-pressed="false">거래대금순</button>
+        </div>
+        <label><input type="checkbox" id="onlyNear"> 10% 이내만</label>
+        <input id="q" type="search" placeholder="종목 검색" aria-label="종목 검색">
+      </div>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>종목명</th><th class="num">등락률</th><th class="num">하단까지</th><th></th></tr></thead>
+        <tbody id="body"></tbody>
+      </table>
+    </div>
+    <p class="empty" id="empty" hidden></p>
+    <p class="empty" id="restore" hidden></p>
+  </section>
+</main>
+
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+(() => {
+  const nf = new Intl.NumberFormat('ko-KR');
+  const $ = (s) => document.querySelector(s);
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const dark = () => matchMedia('(prefers-color-scheme: dark)').matches;
+  const getJSON = async (p) => {
+    const r = await fetch(p + '?t=' + Date.now());
+    if (!r.ok) throw new Error(p + ' ' + r.status);
+    return r.json();
+  };
+  const cap = (v) => { const j = v / 1e12; return (j >= 100 ? nf.format(Math.round(j)) : j.toFixed(1)) + '조'; };
+  const pct = (v, d = 1) => (v >= 0 ? '+' : '') + v.toFixed(d) + '%';
+  const md = (s) => s ? s.slice(5).replace('-', '/') : '';
+
+  // 삭제한 종목은 이 브라우저에만 저장한다 (같은 종목에 새 포착일이 생기면 다시 나타남)
+  const KEY = 's2_deleted';
+  const loadDel = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; } };
+  const saveDel = (o) => { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) { /* 저장 불가 환경이면 새로고침 때까지만 유지 */ } };
+  let deleted = loadDel();
+  const isDeleted = (h) => deleted[h.code] === h.trigger_date;
+
+  let items = [], params = {env_pct: 20, near_pct: 10};
+  let sortBy = 'gap', viewBy = 'watch', onlyNear = false, selected = null, span = 120, cur = null;
+  let chart = null, candle = null, upLine = null, loLine = null;
+
+  const palette = () => dark()
+    ? {bg:'#141b24', text:'#8a96a8', grid:'#1f2833', up:'#ff6a70', down:'#6ea2ff', env:'#e6ebf2'}
+    : {bg:'#ffffff', text:'#667085', grid:'#eef0f4', up:'#e0383e', down:'#2b6cde', env:'#111111'};
+
+  function ensureChart() {
+    if (chart) return;
+    const el = $('#chart'), p = palette();
+    chart = LightweightCharts.createChart(el, {
+      width: el.clientWidth, height: el.clientHeight,
+      layout: {background: {type: 'solid', color: p.bg}, textColor: p.text, fontFamily: 'inherit'},
+      grid: {vertLines: {color: p.grid}, horzLines: {color: p.grid}},
+      rightPriceScale: {borderColor: p.grid},
+      timeScale: {borderColor: p.grid, timeVisible: false},
+      crosshair: {mode: 0},
+    });
+    const fmt = {type: 'price', precision: 0, minMove: 1};
+    candle = chart.addCandlestickSeries({
+      upColor: p.up, downColor: p.down, borderUpColor: p.up, borderDownColor: p.down,
+      wickUpColor: p.up, wickDownColor: p.down, priceFormat: fmt,
+    });
+    const line = () => chart.addLineSeries({color: p.env, lineWidth: 2, priceLineVisible: false, lastValueVisible: false, priceFormat: fmt});
+    upLine = line(); loLine = line();
+    new ResizeObserver(() => chart.applyOptions({width: el.clientWidth, height: el.clientHeight})).observe(el);
+    chart.timeScale().subscribeVisibleLogicalRangeChange(onRange);
+  }
+
+  function onRange(r) {
+    const v = $('#view');
+    if (!cur || !r) { v.textContent = ''; return; }
+    const n = cur.t.length;
+    const from = Math.max(0, Math.ceil(r.from)), to = Math.min(n - 1, Math.floor(r.to));
+    v.textContent = to < from ? '' : `화면에 ${to - from + 1}봉 (${cur.t[from]} ~ ${cur.t[to]})`;
+  }
+
+  function applyRange() {
+    if (!chart || !cur) return;
+    const n = cur.t.length;
+    if (!span || span >= n) { chart.timeScale().fitContent(); return; }
+    chart.timeScale().setVisibleLogicalRange({from: n - span - 0.5, to: n - 0.5});
+  }
+
+  async function showChart(it) {
+    ensureChart();
+    $('#chTitle').textContent = `${it.name} ${it.code}`;
+    const st = it.touched ? ` · 하단 터치 ${it.touch_date}` : '';
+    $('#chMeta').textContent = `${it.market} · 시총 ${cap(it.marcap)} · 포착 ${it.trigger_date} (거래대금 약 ${nf.format(it.trigger_amount)}억) · 종가 ${nf.format(it.close)} (${pct(it.change_pct)}) · 하단까지 ${pct(it.gap_pct)}${st}`;
+    let d;
+    try { d = await getJSON('data/charts/' + it.code + '.json'); }
+    catch (e) { $('#chMeta').textContent = '차트 데이터를 불러오지 못했어요. 잠시 뒤 다시 눌러 주세요.'; return; }
+    cur = d;
+    candle.setData(d.t.map((t, i) => ({time: t, open: d.o[i], high: d.h[i], low: d.l[i], close: d.c[i]})));
+    const line = (arr) => d.t.map((t, i) => arr[i] == null ? null : {time: t, value: arr[i]}).filter(Boolean);
+    upLine.setData(line(d.up));
+    loLine.setData(line(d.lo));
+    const set = new Set(d.t);
+    const marks = (d.triggers || []).filter((t) => set.has(t))
+      .map((t) => ({time: t, position: 'belowBar', color: '#f08c00', shape: 'arrowUp', text: t === d.trigger_date ? '포착' : ''}));
+    if (d.touch_date && set.has(d.touch_date)) marks.push({time: d.touch_date, position: 'belowBar', color: '#2b6cde', shape: 'circle', text: '터치'});
+    marks.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+    candle.setMarkers(marks);
+    applyRange();
+  }
+
+  function visible() {
+    const q = $('#q').value.trim().toLowerCase();
+    let rows = items.filter((h) => !isDeleted(h)
+      && (viewBy === 'all' || (viewBy === 'watch' ? !h.touched : h.touched))
+      && (!q || h.name.toLowerCase().includes(q) || h.code.includes(q))
+      && (!onlyNear || h.near));
+    if (sortBy === 'gap') rows = rows.slice().sort((a, b) => b.gap_pct - a.gap_pct);
+    else if (sortBy === 'new') rows = rows.slice().sort((a, b) => (a.trigger_date < b.trigger_date ? 1 : a.trigger_date > b.trigger_date ? -1 : b.trigger_amount - a.trigger_amount));
+    else if (sortBy === 'amt') rows = rows.slice().sort((a, b) => b.trigger_amount - a.trigger_amount);
+    return rows;
+  }
+
+  function renderList() {
+    const rows = visible();
+    $('#body').innerHTML = rows.map((h) => `
+      <tr data-code="${esc(h.code)}" class="${h.near && !h.touched ? 'near' : ''}" aria-selected="${selected === h.code}">
+        <td class="nm"><b>${esc(h.name)}</b>${h.touched ? `<span class="tag done">터치 ${md(h.touch_date)}</span>` : (h.touch_today ? '<span class="tag">터치</span>' : '')}<small>포착 ${md(h.trigger_date)} · ${nf.format(h.trigger_amount)}억 · 시총 ${cap(h.marcap)}</small></td>
+        <td class="num ${h.change_pct >= 0 ? 'up' : 'down'}">${pct(h.change_pct, 2)}</td>
+        <td class="num">${pct(h.gap_pct, 1)}</td>
+        <td class="num"><button type="button" class="del" data-del="${esc(h.code)}" title="관심종목에서 삭제" aria-label="${esc(h.name)} 삭제">삭제</button></td>
+      </tr>`).join('');
+    const empty = $('#empty');
+    empty.hidden = rows.length > 0;
+    empty.textContent = items.length ? '조건에 맞는 종목이 없어요.' : '아직 데이터가 없어요. GitHub Actions에서 s2_scan을 한 번 실행해 주세요.';
+    const nDel = items.filter(isDeleted).length;
+    const rs = $('#restore');
+    rs.hidden = nDel === 0;
+    rs.innerHTML = nDel ? `삭제한 종목 ${nDel}개 · <button type="button" class="lnk" id="undo">모두 되돌리기</button>` : '';
+    if (nDel) $('#undo').addEventListener('click', () => { deleted = {}; saveDel(deleted); renderList(); });
+    $('#body').querySelectorAll('tr').forEach((tr, i) => {
+      tr.addEventListener('click', () => {
+        selected = tr.dataset.code;
+        $('#body').querySelectorAll('tr').forEach((x) => x.setAttribute('aria-selected', String(x === tr)));
+        showChart(rows[i]);
+      });
+      tr.querySelector('.del').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const h = rows[i];
+        deleted[h.code] = h.trigger_date;
+        saveDel(deleted);
+        renderList();
+      });
+    });
+  }
+
+  function wire() {
+    document.querySelectorAll('#seg button').forEach((b) => b.addEventListener('click', () => {
+      span = +b.dataset.n;
+      document.querySelectorAll('#seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      applyRange();
+    }));
+    document.querySelectorAll('#sort button').forEach((b) => b.addEventListener('click', () => {
+      sortBy = b.dataset.s;
+      document.querySelectorAll('#sort button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      renderList();
+    }));
+    document.querySelectorAll('#view2 button').forEach((b) => b.addEventListener('click', () => {
+      viewBy = b.dataset.v;
+      document.querySelectorAll('#view2 button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      renderList();
+    }));
+    $('#onlyNear').addEventListener('change', (e) => { onlyNear = e.target.checked; renderList(); });
+    $('#q').addEventListener('input', renderList);
+  }
+
+  async function init() {
+    wire();
+    let data = {items: [], asof: null};
+    try { data = await getJSON('data/list.json'); } catch (e) { /* 아래 안내 문구로 처리 */ }
+    items = data.items || [];
+    params = data.params || params;
+    const watch = items.filter((h) => !h.touched);
+    const nearN = watch.filter((h) => h.near).length;
+    $('#rule').textContent = `양봉 거래대금 5000억↑·시총 1조↑ 또는 3000억↑·시총 5조↑ 포착 → 20일 엔벨로프(±${params.env_pct}%) 하단까지 ${params.near_pct}% 이내면 근접, 저가가 하단 이하면 터치 (${data.since || ''} 이후)`;
+    $('#onlyNear').parentElement.lastChild.textContent = ` ${params.near_pct}% 이내만`;
+    $('#stamp').innerHTML = data.asof
+      ? `<b>${esc(data.asof)}</b> 장 마감 기준 · 감시중 ${nf.format(watch.length)}종목 · 근접 ${nearN}종목 · 갱신 ${esc((data.updated_at || '').slice(0, 16).replace('T', ' '))}`
+      : '스캔 기록 없음';
+    $('#listTitle').textContent = `종목 (${nf.format(items.length)})`;
+    renderList();
+    const first = visible()[0];
+    if (first) {
+      selected = first.code;
+      renderList();
+      showChart(first);
+    } else ensureChart();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
