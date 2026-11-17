@@ -41,7 +41,7 @@ ENV_PERIOD = 20
 ENV_PCT = 20.0
 NEAR_PCT = 10.0
 RULES = [  # (이름, 최소 거래대금, 최소 시총)
-    ('B', 300_000_000_000, 5_000_000_000_000),
+    ('B', 300_000_000_000, 2_000_000_000_000),
 ]
 MIN_MARCAP = min(r[2] for r in RULES)
 SINCE = os.environ.get('S2_SINCE') or '2026-08-01'
