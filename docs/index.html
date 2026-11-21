@@ -303,7 +303,7 @@ td small{color:var(--sub); font-size:12px}
     params = data.params || params;
     const watch = items.filter((h) => !h.touched);
     const nearN = watch.filter((h) => h.near).length;
-    $('#rule').textContent = `양봉 거래대금 5000억↑·시총 1조↑ 또는 3000억↑·시총 5조↑ 포착 → 20일 엔벨로프(±${params.env_pct}%) 하단까지 ${params.near_pct}% 이내면 근접, 저가가 하단 이하면 터치 (${data.since || ''} 이후)`;
+    $('#rule').textContent = `3000억↑·시총 2조↑ 포착 → 20일 엔벨로프(±${params.env_pct}%) 하단까지 ${params.near_pct}% 이내면 근접, 저가가 하단 이하면 터치 (${data.since || ''} 이후)`;
     $('#onlyNear').parentElement.lastChild.textContent = ` ${params.near_pct}% 이내만`;
     $('#stamp').innerHTML = data.asof
       ? `<b>${esc(data.asof)}</b> 장 마감 기준 · 감시중 ${nf.format(watch.length)}종목 · 근접 ${nearN}종목 · 갱신 ${esc((data.updated_at || '').slice(0, 16).replace('T', ' '))}`
